@@ -1,0 +1,1 @@
+put your server side ejs template here

@@ -5,7 +5,7 @@
 #exclude folder
 node_modules
 
-#include js css html ejs json jpg png
+#include js css html ejs json jpg png md
 !*.js
 !*.css
 !*.html
@@ -13,13 +13,12 @@ node_modules
 !*.json
 !*.jpg
 !*.png
+!*.md
 
 #include some important file
 !.editorconfig
 !.gitattributes
 !.gitignore
-!LICENSE.md
-!README.md
 !client/humans.txt
 !client/robots.txt
 !client/browserconfig.xml
