@@ -1,0 +1,16 @@
+{
+  "name": "waterdrop-server",
+  "version": "1.0.0",
+  "description": "waterdrop-server",
+  "main": "main.js",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "mime": "^2.3.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

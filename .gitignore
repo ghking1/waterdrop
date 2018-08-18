@@ -19,6 +19,7 @@ node_modules
 !.editorconfig
 !.gitattributes
 !.gitignore
+!.npmrc
 !client/humans.txt
 !client/robots.txt
 !client/browserconfig.xml
