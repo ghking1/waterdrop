@@ -1,2 +1,2 @@
 # waterdrop
-a transparent full stack javascript web boilerplate
+transparent full stack javascript web boilerplate
