@@ -96,7 +96,7 @@ function AJAX(type, url, data, options)
             xhr.send(data);
         }
     }
-    catch
+    catch(ex)
     {
         window.clearTimeout(ajax_timeout);
         error(xhr);
