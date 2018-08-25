@@ -26,7 +26,7 @@ PRINT_LOG     = true;             //whether print log information
  **************************************************/
 //middlewares is "router_string: [[catch_ware1, catch_ware2,...], [bubble_ware1, bubble_ware2,...]]" dictionary
 var middlewares={
-    '/': [[session_ware], [log_ware]]   //default middle ware, it can be removed
+    '/': [[session_ware, query_ware], [log_ware]]   //default middle ware, it can be removed
 };
 
 //routers is "router_string: router_handler" dictionary
@@ -248,6 +248,15 @@ function log_ware(req, res)
     }
 }
 
+function query_ware(req, res)
+{
+    req.query=url.parse(req.url, true).query;
+}
+
+function body_ware(req, res)
+{
+    
+}
 
 /**************************************************
  *
