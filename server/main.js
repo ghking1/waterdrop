@@ -309,6 +309,7 @@ function read_body(req, res, callback)
             if (status.err) 
             {
                 req.unpipe();   //detech all readable pipe
+                req.pause();
                 buffer = null;  //free buffer
             }
             else
