@@ -17,6 +17,7 @@ STATIC_PATH   = '../client';      //default static files path
 SESSION_TIMES = 10080;            //session expiration time (minute), default is one week
 SESSION_SLICE = 60;               //recycle sessions every slice time (minute), default is one hour
 PRINT_LOG     = true;             //whether print log information
+BODY_LIMIT    = 1024*1024;        //body size limit (Byte)
 
 
 /**************************************************
@@ -26,7 +27,7 @@ PRINT_LOG     = true;             //whether print log information
  **************************************************/
 //middlewares is "router_string: [[catch_ware1, catch_ware2,...], [bubble_ware1, bubble_ware2,...]]" dictionary
 var middlewares={
-    '/': [[session_ware, query_ware], [log_ware]]   //default middle ware, it can be removed
+    '/': [[session_ware, query_ware, body_ware], [log_ware]]   //default middle ware, it can be removed
 };
 
 //routers is "router_string: router_handler" dictionary
@@ -61,49 +62,54 @@ function main(req, res)
     var path_array = router_string.split('/');  //root request '/' result is ['', ''], so the last '' need be removed
     if(path_array[path_array.length-1]==''){path_array.pop()}
 
+    //execute one by one, use next to switch
+    var execute_1by1 = [];
+    var execute_index = 0;
+
     //catch stage
     var catch_string = '';
     path_array.forEach(function(item, index, array){
         catch_string    = catch_string + '/' + item;
-        var catch_middlewares = undefined;
-        var catch_index = 0;
-        var catch_end   = 0;
         if(typeof(middlewares[catch_string]) != 'undefined')
         {
-            catch_middlewares=middlewares[catch_string][0];
-            for(catch_end=catch_middlewares.length; catch_index<catch_end; ++catch_index)
-            {
-                catch_middlewares[catch_index].call(null, req, res);
-            }
+            execute_1by1=execute_1by1.concat(middlewares[catch_string][0]);
         }
     });
 
     //object stage
-    if(typeof(routers[router_string])=='function')      //find valid router, then dispatch to router_handler
+    function route_wrap(req, res, next)
     {
-        routers[router_string].call(null, req, res);
+        if(typeof(routers[router_string])=='function')      //find valid router, then dispatch to router_handler
+        {
+            routers[router_string].call(null, req, res, next);
+        }
+        else                                                //else handle it with staticFile 
+        {
+            staticFile(req, res, next, STATIC_PATH + router_string, false);
+        }
     }
-    else                                                //else handle it with staticFile 
-    {
-        staticFile(req, res, STATIC_PATH + router_string, false);
-    }
+    execute_1by1.push(route_wrap);
 
     //bubble stage
     var bubble_string = router_string;
     path_array.reverse().forEach(function(item, index, array){
-        var bubble_middlewares = undefined;
-        var bubble_index = 0;
-        var bubble_end   = 0;
         if(typeof(middlewares[bubble_string]) != 'undefined')
         {
-            bubble_middlewares=middlewares[bubble_string][1];
-            for(bubble_end=bubble_middlewares.length; bubble_index<bubble_end; ++bubble_index)
-            {
-                bubble_middlewares[bubble_index].call(null, req, res);
-            }
+            execute_1by1=execute_1by1.concat(middlewares[bubble_string][1]);
         }
         bubble_string = (index==array.length-2) ? '/' : bubble_string.slice(0, -(('/'+item).length));
     });
+
+    //next dispatcher, call execute_1by1's element in order
+    function next()
+    {
+        if(execute_index<execute_1by1.length)
+        {
+            execute_1by1[execute_index++].call(null, req, res, next);
+            //execute_index+1 shouldn't do after call, because it's recursive call
+        }
+    }
+    next(); //start dispatch
 }
 
 
@@ -115,7 +121,7 @@ function main(req, res)
  *  call it from notfound_handler
  *
  **************************************************/
-function staticFile(req, res, file_path, notfound)
+function staticFile(req, res, next, file_path, notfound)
 {
     fs.exists(file_path, handleExists);
 
@@ -130,16 +136,18 @@ function staticFile(req, res, file_path, notfound)
             res.writeHead(404);         //so response 404 directly              !!!
             res.write('404 error!');    //it shouldn't call notfound_handler    !!!
             res.end();                  //otherwise it will recusive forever    !!!
+            next();
         }
         else if(typeof(routers['/notfound'])=='function')
         {
-            routers['/notfound'].call(null, req, res);
+            routers['/notfound'].call(null, req, res, next);
         }
         else
         {
             res.writeHead(500);
             res.write('routers error!');
             res.end();
+            next();
         }
 
         function handleRead(err, data)
@@ -156,28 +164,30 @@ function staticFile(req, res, file_path, notfound)
                 res.write(data, 'binary');
                 res.end();
             }
+            next();
         }
     }
 }
 
-function default_handler(req, res)
+function default_handler(req, res, next)
 {
     //when request for '/', but index.html is not exists
     //page won't response 404.html, but just response 404
-    staticFile(req, res, STATIC_PATH + '/index.html', false);
+    staticFile(req, res, next, STATIC_PATH + '/index.html', false);
 }
 
-function notfound_handler(req, res)
+function notfound_handler(req, res, next)
 {
     var router_string=url.parse(req.url).pathname;
     if(router_string.slice(-5)=='.html')    //html notfound, response 404.html page
     {
-        staticFile(req, res, STATIC_PATH + '/404.html', true);
+        staticFile(req, res, next, STATIC_PATH + '/404.html', true);
     }
     else                                    //other file notfound, response 404 directly
     {
         res.writeHead(404);
         res.end();
+        next();
     }
 }
 
@@ -210,7 +220,7 @@ setInterval(function(){
     }
 }, SESSION_SLICE*60000);
 
-function session_ware(req, res)
+function session_ware(req, res, next)
 {
     var now_time = Date.now();
     var cookies = {};
@@ -238,25 +248,135 @@ function session_ware(req, res)
         res.setHeader("Set-Cookie", cookie);
         req.session=sessions[session_id].session;
     }
+    next();
 }
 
-function log_ware(req, res)
+
+/**************************************************
+ *
+ *  receive raw body 
+ *
+ **************************************************/
+function body_ware(req, res, next)
+{
+    if(req.method=='POST')
+    {
+        read_body(req, res, callback);
+    }
+    else
+    {
+        next();
+    }
+
+    function callback(err, body)
+    {
+        if(err)
+        {
+            req.body=null;
+        }
+        else
+        {
+            req.body = Buffer.concat(body).toString();
+        }
+        next();
+    }
+}
+
+function read_body(req, res, callback)
+{
+    var sync     = true;        //avoid cleanup so early
+    var complete = false;       //avoid nonetheless option after done executed
+    var buffer   = [];          //temp received data
+    var content_length = parseInt(req.headers['content-length']);  //maybe NaN
+
+    req.on('data', onData);
+    req.on('close', cleanup);
+    req.on('aborted', onAborted);
+    req.on('end', onEnd);
+    req.on('error', onEnd);
+
+    sync = false;
+
+    function done(err)  //err is 0 or -1, 0: success; -1: failed
+    {
+        complete = true;
+        sync ? process.nextTick(invokeCallback) : invokeCallback();
+
+        function invokeCallback() 
+        {
+            cleanup();
+            if (err) 
+            {
+                req.unpipe();   //detech all readable pipe
+                buffer = null;  //free buffer
+            }
+            callback.call(null, err, buffer);
+        }
+    }
+
+    function onData(data)
+    {
+        if(complete) return;
+        if(buffer.length+data.length > BODY_LIMIT)
+        {
+            done(-1);
+        }
+        else
+        {
+            buffer.push(data);
+        }
+    }
+
+    function onEnd(err)
+    {
+        if(complete) return;
+        if(err || (content_length>=0 && content_length==bufer.length))
+        {
+            done(-1);
+        }
+        else
+        {
+            done(0);
+        }
+    }
+
+    function onAborted()
+    {
+        if (complete) return;
+        done(-1);
+    }
+
+    function cleanup () 
+    {
+        req.removeListener('data', onData);
+        req.removeListener('close', cleanup);
+        req.removeListener('aborted', onAborted);
+        req.removeListener('end', onEnd);
+        req.removeListener('error', onEnd);
+    }
+}
+
+
+/**************************************************
+ *
+ *  other middle ware
+ *
+ **************************************************/
+function log_ware(req, res, next)
 {
     if(PRINT_LOG)
     {
         console.log('[info ]: request for ' + url.parse(req.url).pathname);
     }
+    next();
 }
 
-function query_ware(req, res)
+function query_ware(req, res, next)
 {
     req.query=url.parse(req.url, true).query;
+    next();
 }
 
-function body_ware(req, res)
-{
-    
-}
 
 /**************************************************
  *
