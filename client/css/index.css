@@ -12,7 +12,8 @@
     width: 400px;
 }
 
-.waterdrop-banner , .waterdrop-counter{
+.waterdrop-banner , .waterdrop-counter, .waterdrop-upload{
+    display: block;
     margin: 0px;
     color: #55B2E4;
     font-size: 28px; 

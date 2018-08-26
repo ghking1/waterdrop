@@ -17,7 +17,7 @@ STATIC_PATH   = '../client';      //default static files path
 SESSION_TIMES = 10080;            //session expiration time (minute), default is one week
 SESSION_SLICE = 60;               //recycle sessions every slice time (minute), default is one hour
 PRINT_LOG     = true;             //whether print log information
-BODY_LIMIT    = 1024*1024;        //body size limit (Byte)
+BODY_LIMIT    = 1;//1024*1024*100;    //body size limit (Byte), 100M default
 
 
 /**************************************************
@@ -268,15 +268,15 @@ function body_ware(req, res, next)
         next();
     }
 
-    function callback(err, body)
+    function callback(status, body)
     {
-        if(err)
+        if(status.err)
         {
-            req.body=null;
+            req.body=null;  //todo: status should send to route
         }
         else
         {
-            req.body = Buffer.concat(body).toString();
+            req.body = body;
         }
         next();
     }
@@ -286,7 +286,8 @@ function read_body(req, res, callback)
 {
     var sync     = true;        //avoid cleanup so early
     var complete = false;       //avoid nonetheless option after done executed
-    var buffer   = [];          //temp received data
+    var buffer   = [];          //temp received buffer data, [buffer1, buffer2, ..., buffern]
+    var received = 0;           //received length
     var content_length = parseInt(req.headers['content-length']);  //maybe NaN
 
     req.on('data', onData);
@@ -297,7 +298,7 @@ function read_body(req, res, callback)
 
     sync = false;
 
-    function done(err)  //err is 0 or -1, 0: success; -1: failed
+    function done(status)  //0: success; -1: size exceed; -2: size inconformity; -3: abort unexpected
     {
         complete = true;
         sync ? process.nextTick(invokeCallback) : invokeCallback();
@@ -305,21 +306,26 @@ function read_body(req, res, callback)
         function invokeCallback() 
         {
             cleanup();
-            if (err) 
+            if (status.err) 
             {
                 req.unpipe();   //detech all readable pipe
                 buffer = null;  //free buffer
             }
-            callback.call(null, err, buffer);
+            else
+            {
+                buffer=Buffer.concat(buffer); //merge buffer array to buffer
+            }
+            callback.call(null, status, buffer);
         }
     }
 
     function onData(data)
     {
         if(complete) return;
-        if(buffer.length+data.length > BODY_LIMIT)
+        received += data.length;
+        if(received > BODY_LIMIT)
         {
-            done(-1);
+            done({err:-1, msg:'size exceed'});
         }
         else
         {
@@ -330,20 +336,20 @@ function read_body(req, res, callback)
     function onEnd(err)
     {
         if(complete) return;
-        if(err || (content_length>=0 && content_length==bufer.length))
+        if(err || (content_length>=0 && content_length==buffer.length))
         {
-            done(-1);
+            done({err:-2, msg:'size inconformity'});
         }
         else
         {
-            done(0);
+            done({err:0, msg:'success'});
         }
     }
 
     function onAborted()
     {
         if (complete) return;
-        done(-1);
+        done({err:-3, msg:'abort unexpected'});
     }
 
     function cleanup () 
