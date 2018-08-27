@@ -16,8 +16,8 @@ ROUTER_PATH   = './router';       //default use routers in './router'
 STATIC_PATH   = '../client';      //default static files path
 SESSION_TIMES = 10080;            //session expiration time (minute), default is one week
 SESSION_SLICE = 60;               //recycle sessions every slice time (minute), default is one hour
-PRINT_LOG     = true;             //whether print log information
 BODY_LIMIT    = 1024*1024*100;    //body size limit (Byte), 100M default
+PRINT_LOG     = true;             //whether print log information
 
 
 /**************************************************
