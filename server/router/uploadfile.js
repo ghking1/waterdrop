@@ -9,15 +9,11 @@ function uploadfile(req, res, next)
     {
         if(err)
         {
-            res.writeHead(200, {"Content-Type": "text/plain"});
-            res.write(JSON.stringify({err: -4, msg: 'cann\'t write'}));
-            res.end();
+            res.send(JSON.stringify({err: -4, msg: 'cann\'t write'}));
         }
         else
         {
-            res.writeHead(200, {"Content-Type": "text/plain"});
-            res.write(JSON.stringify({err: 0, msg: 'success'}));
-            res.end();
+            res.send(JSON.stringify({err: 0, msg: 'success'}));
         }
         next();
     }
@@ -28,8 +24,6 @@ function uploadfile(req, res, next)
     }
     else
     {
-        res.writeHead(200, {"Content-Type": "text/plain"});
-        res.write(JSON.stringify({err: -1, msg: 'size exceed'}));
-        res.end();
+        res.send(JSON.stringify({err: -1, msg: 'size exceed'}));
     }
 }

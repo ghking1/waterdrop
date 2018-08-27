@@ -27,7 +27,7 @@ BODY_LIMIT    = 1024*1024*100;    //body size limit (Byte), 100M default
  **************************************************/
 //middlewares is "router_string: [[catch_ware1, catch_ware2,...], [bubble_ware1, bubble_ware2,...]]" dictionary
 var middlewares={
-    '/': [[session_ware, query_ware, body_ware], [log_ware]]   //default middle ware, it can be removed
+    '/': [[session_ware, query_ware, body_ware, response_ware], [log_ware]]   //default middle ware, it can be removed
 };
 
 //routers is "router_string: router_handler" dictionary
@@ -384,6 +384,20 @@ function query_ware(req, res, next)
     next();
 }
 
+function response_ware(req, res, next)
+{
+    res.send = send;
+    next();
+
+    function send(data, options)
+    {
+        var content_type = (options && options.content_type) ? options.content_type : 'application/json';
+        var status_code  = (options && options.status_code)  ? options.status_code  :  200;
+        res.writeHead(status_code, {"Content-Type": content_type});
+        res.write(data);
+        res.end();
+    }
+}
 
 /**************************************************
  *

@@ -78,7 +78,8 @@ function uploadFile(files)
         var data    = event.target.result;
         var options = {
             success: success,
-            error: error
+            error: error,
+            content_type: 'application/octet-stream'
         }
         AJAX('POST', encodeURI(url), data, options);
     }

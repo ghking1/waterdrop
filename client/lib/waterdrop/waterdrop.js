@@ -49,7 +49,7 @@
  **************************************************/
 function AJAX(type, url, data, options)
 {
-    var content_type = (options && options.content_type) ? options.content_type : 'text/plain';
+    var content_type = (options && options.content_type) ? options.content_type : 'application/json';
     var timeout      = (options && options.timeout)      ? options.timeout      : 30000;
     var cache        = (options && options.cache)        ? options.cache        : false;
     var success      = (options && options.success)      ? options.success      : function(){};
