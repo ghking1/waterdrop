@@ -1,5 +1,5 @@
 # waterdrop
-transparent full stack javascript web boilerplate
+transparent full stack node.js web boilerplate
 
 # quick start
 1. you only need node >= 8.0.0
