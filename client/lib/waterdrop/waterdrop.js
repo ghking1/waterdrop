@@ -83,17 +83,20 @@ function AJAX(type, url, data, options)
             }
         }
 
-        if(type.toUpperCase() == "GET")
+        switch(type.toUpperCase())
         {
+        case "GET": case "DELETE":
             xhr.open(type, url, true);
             cache ? null : xhr.setRequestHeader("If-Modified-Since","0");
             xhr.send(null)
-        } 
-        else if(type.toUpperCase() == "POST")
-        {
+            break;
+        case "POST": case "PUT":
             xhr.open(type, url, true);
             xhr.setRequestHeader('Content-Type', content_type);
             xhr.send(data);
+            break;
+        default:
+            break;
         }
     }
     catch(ex)
