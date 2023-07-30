@@ -1,0 +1,37 @@
+
+.container {
+    width: 100%;
+    text-align: center; 
+}
+
+#changeable {
+    height: 400px;
+}
+
+.waterdrop-icon {
+    width: 400px;
+}
+
+.waterdrop-banner , .waterdrop-counter, .waterdrop-upload{
+    display: block;
+    margin: 0px;
+    color: #55B2E4;
+    font-size: 28px; 
+    line-height: 400px;
+}
+
+#clickbutton {
+    margin-top: 32px;
+    height: 40px;
+    background: #2f435e;
+    color: #f2f2f2;
+    padding: 10px 30px 10px 30px;
+    border-width: 0px;
+    font-size: 16px;
+    border-radius: 3px;
+    transition:all linear 0.30s; 
+}
+
+#clickbutton:hover{
+    background: #385f9e;
+}
