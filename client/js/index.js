@@ -31,3 +31,9 @@ function close_popup()
         popup.classList.add("wd-dn");   
     }
 }
+
+window.addEventListener("load", function() {
+    //onload 
+});
+
+
